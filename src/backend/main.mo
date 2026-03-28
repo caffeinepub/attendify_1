@@ -84,18 +84,24 @@ actor {
     name : Text;
   };
 
-  // ─── Stable storage (survives canister upgrades) ───────────────────────────
-  stable var stableNextEmployeeId : Nat = 1;
-  stable var stableNextAttendanceId : Nat = 1;
-  stable var stableInitialized : Bool = false;
-  stable var stableEmployees : [(Nat, Employee)] = [];
-  stable var stableAttendanceRecords : [(Nat, AttendanceRecord)] = [];
-  stable var stableRosterEntries : [(Text, RosterEntry)] = [];
-  stable var stableSessions : [(Text, Session)] = [];
-  stable var stableEmployeeCustomIds : [(Nat, Text)] = [];
-  stable var stableAttendanceApprovers : [(Nat, Text)] = [];
+  public type BiometricCredential = {
+    credentialId : Text;
+    employeeId : Nat;
+  };
 
-  // ─── In-memory maps (rebuilt from stable on upgrade) ───────────────────────
+  // ─── Stable storage (survives canister upgrades) ───────────────────────────────────────
+  var stableNextEmployeeId : Nat = 1;
+  var stableNextAttendanceId : Nat = 1;
+  var stableInitialized : Bool = false;
+  var stableEmployees : [(Nat, Employee)] = [];
+  var stableAttendanceRecords : [(Nat, AttendanceRecord)] = [];
+  var stableRosterEntries : [(Text, RosterEntry)] = [];
+  var stableSessions : [(Text, Session)] = [];
+  var stableEmployeeCustomIds : [(Nat, Text)] = [];
+  var stableAttendanceApprovers : [(Nat, Text)] = [];
+  var stableBiometricCredentials : [(Text, Nat)] = []; // credentialId -> employeeId
+
+  // ─── In-memory maps ─────────────────────────────────────────────────────────
   var nextEmployeeId : Nat = stableNextEmployeeId;
   var nextAttendanceId : Nat = stableNextAttendanceId;
   var initialized : Bool = stableInitialized;
@@ -105,16 +111,7 @@ actor {
   var sessions : Map.Map<Text, Session> = Map.empty();
   var employeeCustomIds : Map.Map<Nat, Text> = Map.empty();
   var attendanceApprovers : Map.Map<Nat, Text> = Map.empty();
-
-  // Restore from stable storage on init
-  do {
-    for ((k, v) in stableEmployees.vals()) { employees.add(k, v) };
-    for ((k, v) in stableAttendanceRecords.vals()) { attendanceRecords.add(k, v) };
-    for ((k, v) in stableRosterEntries.vals()) { rosterEntries.add(k, v) };
-    for ((k, v) in stableSessions.vals()) { sessions.add(k, v) };
-    for ((k, v) in stableEmployeeCustomIds.vals()) { employeeCustomIds.add(k, v) };
-    for ((k, v) in stableAttendanceApprovers.vals()) { attendanceApprovers.add(k, v) };
-  };
+  var biometricCredentials : Map.Map<Text, Nat> = Map.empty(); // credentialId -> employeeId
 
   // Serialize to stable before upgrade
   system func preupgrade() {
@@ -124,34 +121,54 @@ actor {
     stableSessions := sessions.entries().toArray();
     stableEmployeeCustomIds := employeeCustomIds.entries().toArray();
     stableAttendanceApprovers := attendanceApprovers.entries().toArray();
+    stableBiometricCredentials := biometricCredentials.entries().toArray();
     stableNextEmployeeId := nextEmployeeId;
     stableNextAttendanceId := nextAttendanceId;
     stableInitialized := initialized;
   };
 
-  // Restore from stable after upgrade (in-memory vars are re-initialized above via do{})
+  // Restore from stable after upgrade — reset maps first to avoid duplicate-key traps
   system func postupgrade() {
     nextEmployeeId := stableNextEmployeeId;
     nextAttendanceId := stableNextAttendanceId;
     initialized := stableInitialized;
+    employees := Map.empty();
+    attendanceRecords := Map.empty();
+    rosterEntries := Map.empty();
+    sessions := Map.empty();
+    employeeCustomIds := Map.empty();
+    attendanceApprovers := Map.empty();
+    biometricCredentials := Map.empty();
     for ((k, v) in stableEmployees.vals()) { employees.add(k, v) };
     for ((k, v) in stableAttendanceRecords.vals()) { attendanceRecords.add(k, v) };
     for ((k, v) in stableRosterEntries.vals()) { rosterEntries.add(k, v) };
     for ((k, v) in stableSessions.vals()) { sessions.add(k, v) };
     for ((k, v) in stableEmployeeCustomIds.vals()) { employeeCustomIds.add(k, v) };
     for ((k, v) in stableAttendanceApprovers.vals()) { attendanceApprovers.add(k, v) };
+    for ((k, v) in stableBiometricCredentials.vals()) { biometricCredentials.add(k, v) };
   };
 
-  func initAdmin() {
-    if (not initialized) {
-      employees.add(0, { id = 0; name = "Administrator"; username = "admin";
-        passwordHash = "admin123"; role = #admin; hourlyRate = 0.0; shiftType = #both; isActive = true });
-      employeeCustomIds.add(0, "ADMIN");
-      employees.add(99, { id = 99; name = "Gatekeeper"; username = "gatekeeper";
-        passwordHash = "gate123"; role = #gatekeeper; hourlyRate = 0.0; shiftType = #both; isActive = true });
-      employeeCustomIds.add(99, "GK001");
-      initialized := true;
+  // Always ensure admin and gatekeeper exist — check by actual map presence, not just flag
+  func ensureDefaultAccounts() {
+    switch (employees.get(0)) {
+      case null {
+        // Admin missing — create it
+        employees.add(0, { id = 0; name = "Administrator"; username = "admin";
+          passwordHash = "admin123"; role = #admin; hourlyRate = 0.0; shiftType = #both; isActive = true });
+        employeeCustomIds.add(0, "ADMIN");
+      };
+      case (?_) {}; // already exists
     };
+    switch (employees.get(99)) {
+      case null {
+        // Gatekeeper missing — create it
+        employees.add(99, { id = 99; name = "Gatekeeper"; username = "gatekeeper";
+          passwordHash = "gate123"; role = #gatekeeper; hourlyRate = 0.0; shiftType = #both; isActive = true });
+        employeeCustomIds.add(99, "GK001");
+      };
+      case (?_) {}; // already exists
+    };
+    initialized := true;
   };
 
   func getSession(token : Text) : ?Session {
@@ -187,9 +204,9 @@ actor {
       approvedBy = approver; netHours = rec.netHours };
   };
 
-  // ─── AUTH ──────────────────────────────────────────────────────────────────
+  // ─── AUTH ───────────────────────────────────────────────────────────
   public func login(username : Text, password : Text) : async ?LoginResult {
-    initAdmin();
+    ensureDefaultAccounts();
     var result : ?LoginResult = null;
     for (emp in employees.values()) {
       if (emp.username == username and emp.passwordHash == password and emp.isActive) {
@@ -227,7 +244,7 @@ actor {
     };
   };
 
-  // ─── EMPLOYEES ─────────────────────────────────────────────────────────────
+  // ─── EMPLOYEES ───────────────────────────────────────────────────────
   public func addEmployee(token : Text, customId : Text, name : Text, username : Text, password : Text,
     role : Role, hourlyRate : Float, shiftType : ShiftType) : async ?Nat {
     switch (getSession(token)) {
@@ -312,7 +329,61 @@ actor {
     };
   };
 
-  // ─── ROSTER ────────────────────────────────────────────────────────────────
+  // ─── BIOMETRIC CREDENTIALS ─────────────────────────────────────────────────
+  public func addBiometricCredential(token : Text, employeeId : Nat, credentialId : Text) : async Bool {
+    switch (getSession(token)) {
+      case null { false };
+      case (?sess) {
+        if (sess.role != #gatekeeper and sess.role != #admin) { return false };
+        biometricCredentials.add(credentialId, employeeId);
+        true;
+      };
+    };
+  };
+
+  public query func getBiometricCredentials(token : Text) : async [BiometricCredential] {
+    switch (getSession(token)) {
+      case null { [] };
+      case (?sess) {
+        if (sess.role != #gatekeeper and sess.role != #admin) { return [] };
+        biometricCredentials.entries().map(func((cid, eid) : (Text, Nat)) : BiometricCredential {
+          { credentialId = cid; employeeId = eid }
+        }).toArray();
+      };
+    };
+  };
+
+  public query func lookupByBiometric(token : Text, credentialId : Text) : async ?Nat {
+    switch (getSession(token)) {
+      case null { null };
+      case (?sess) {
+        if (sess.role != #gatekeeper and sess.role != #admin) { return null };
+        biometricCredentials.get(credentialId);
+      };
+    };
+  };
+
+  public func removeBiometricCredential(token : Text, employeeId : Nat) : async Bool {
+    switch (getSession(token)) {
+      case null { false };
+      case (?sess) {
+        if (sess.role != #gatekeeper and sess.role != #admin) { return false };
+        var removed = false;
+        let newMap : Map.Map<Text, Nat> = Map.empty();
+        for ((cid, eid) in biometricCredentials.entries().toArray().vals()) {
+          if (eid == employeeId) {
+            removed := true;
+          } else {
+            newMap.add(cid, eid);
+          };
+        };
+        biometricCredentials := newMap;
+        removed;
+      };
+    };
+  };
+
+  // ─── ROSTER ───────────────────────────────────────────────────────────
   public func setRoster(token : Text, employeeId : Nat, date : Text, shiftType : ShiftType) : async Bool {
     switch (getSession(token)) {
       case null { false };
@@ -335,7 +406,7 @@ actor {
     };
   };
 
-  // ─── ATTENDANCE ────────────────────────────────────────────────────────────
+  // ─── ATTENDANCE ───────────────────────────────────────────────────────
   public func markAttendance(token : Text, employeeId : Nat, date : Text, checkIn : Int, isSelf : Bool) : async ?Nat {
     switch (getSession(token)) {
       case null { null };
@@ -459,7 +530,7 @@ actor {
     };
   };
 
-  // ─── REPORTS ───────────────────────────────────────────────────────────────
+  // ─── REPORTS ───────────────────────────────────────────────────────────
   public query func getSalaryReport(token : Text, yearMonth : Text) : async [SalaryReport] {
     switch (getSession(token)) {
       case null { [] };

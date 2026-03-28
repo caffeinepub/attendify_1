@@ -13,7 +13,6 @@ export type ShiftType = { day: null } | { night: null } | { both: null };
 export type AttendanceStatus = { pending: null } | { approved: null } | { rejected: null };
 export type MarkedBy = { gatekeeper: null } | { admin: null } | { self_: null };
 
-// Internal stable type (used by backend storage)
 export interface Employee {
     id: bigint;
     name: string;
@@ -25,7 +24,6 @@ export interface Employee {
     isActive: boolean;
 }
 
-// Extended API type returned by query functions
 export interface EmployeeInfo {
     id: bigint;
     customId: string;
@@ -38,7 +36,6 @@ export interface EmployeeInfo {
     isActive: boolean;
 }
 
-// Extended attendance type returned by query functions
 export interface AttendanceInfo {
     id: bigint;
     employeeId: bigint;
@@ -72,6 +69,11 @@ export interface SalaryReport {
     totalSalary: number;
 }
 
+export interface BiometricCredential {
+    credentialId: string;
+    employeeId: bigint;
+}
+
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     login(username: string, password: string): Promise<[] | [LoginResult]>;
@@ -92,4 +94,8 @@ export interface backendInterface {
     getAttendanceByMonth(token: string, yearMonth: string): Promise<AttendanceInfo[]>;
     getTodayAttendance(token: string, date: string): Promise<AttendanceInfo[]>;
     getSalaryReport(token: string, yearMonth: string): Promise<SalaryReport[]>;
+    addBiometricCredential(token: string, employeeId: bigint, credentialId: string): Promise<boolean>;
+    getBiometricCredentials(token: string): Promise<BiometricCredential[]>;
+    lookupByBiometric(token: string, credentialId: string): Promise<[] | [bigint]>;
+    removeBiometricCredential(token: string, employeeId: bigint): Promise<boolean>;
 }

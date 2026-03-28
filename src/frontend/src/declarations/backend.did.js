@@ -52,6 +52,11 @@ const SalaryReport = IDL.Record({
   totalSalary: IDL.Float64,
 });
 
+const BiometricCredential = IDL.Record({
+  credentialId: IDL.Text,
+  employeeId: IDL.Nat,
+});
+
 export const idlService = IDL.Service({
   login: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(LoginResult)], []),
   changePassword: IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
@@ -72,6 +77,10 @@ export const idlService = IDL.Service({
   getTodayAttendance: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(AttendanceRecord)], ['query']),
   getSalaryReport: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(SalaryReport)], ['query']),
   validateSession: IDL.Func([IDL.Text], [IDL.Bool], []),
+  addBiometricCredential: IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Bool], []),
+  getBiometricCredentials: IDL.Func([IDL.Text], [IDL.Vec(BiometricCredential)], ['query']),
+  lookupByBiometric: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Nat)], ['query']),
+  removeBiometricCredential: IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -121,6 +130,10 @@ export const idlFactory = ({ IDL }) => {
     hourlyRate: IDL.Float64,
     totalSalary: IDL.Float64,
   });
+  const BiometricCredential = IDL.Record({
+    credentialId: IDL.Text,
+    employeeId: IDL.Nat,
+  });
   return IDL.Service({
     login: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(LoginResult)], []),
     changePassword: IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
@@ -141,6 +154,10 @@ export const idlFactory = ({ IDL }) => {
     getTodayAttendance: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(AttendanceRecord)], ['query']),
     getSalaryReport: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(SalaryReport)], ['query']),
     validateSession: IDL.Func([IDL.Text], [IDL.Bool], []),
+    addBiometricCredential: IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Bool], []),
+    getBiometricCredentials: IDL.Func([IDL.Text], [IDL.Vec(BiometricCredential)], ['query']),
+    lookupByBiometric: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Nat)], ['query']),
+    removeBiometricCredential: IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
   });
 };
 

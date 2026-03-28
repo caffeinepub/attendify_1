@@ -67,6 +67,11 @@ type AttendanceInfo =
    netHours: float64;
    status: AttendanceStatus;
  };
+type BiometricCredential =
+ record {
+   credentialId: text;
+   employeeId: nat;
+ };
 service : {
   addEmployee: (token: text, customId: text, name: text, username: text,
    password: text, role: Role, hourlyRate: float64, shiftType: ShiftType) ->
@@ -96,4 +101,8 @@ service : {
   updateEmployee: (token: text, id: nat, name: text, hourlyRate: float64,
    shiftType: ShiftType) -> (bool);
   validateSession: (token: text) -> (bool);
+  addBiometricCredential: (token: text, employeeId: nat, credentialId: text) -> (bool);
+  getBiometricCredentials: (token: text) -> (vec BiometricCredential) query;
+  lookupByBiometric: (token: text, credentialId: text) -> (opt nat) query;
+  removeBiometricCredential: (token: text, employeeId: nat) -> (bool);
 }

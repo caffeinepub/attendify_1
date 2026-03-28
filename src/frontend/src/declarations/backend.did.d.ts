@@ -54,6 +54,11 @@ export interface SalaryReport {
   totalSalary: number;
 }
 
+export interface BiometricCredential {
+  credentialId: string;
+  employeeId: bigint;
+}
+
 export interface _SERVICE {
   login: ActorMethod<[string, string], [] | [LoginResult]>;
   changePassword: ActorMethod<[string, string, string], boolean>;
@@ -74,6 +79,10 @@ export interface _SERVICE {
   getTodayAttendance: ActorMethod<[string, string], AttendanceRecord[]>;
   getSalaryReport: ActorMethod<[string, string], SalaryReport[]>;
   validateSession: ActorMethod<[string], boolean>;
+  addBiometricCredential: ActorMethod<[string, bigint, string], boolean>;
+  getBiometricCredentials: ActorMethod<[string], BiometricCredential[]>;
+  lookupByBiometric: ActorMethod<[string, string], [] | [bigint]>;
+  removeBiometricCredential: ActorMethod<[string, bigint], boolean>;
 }
 
 export declare const idlService: IDL.ServiceClass;

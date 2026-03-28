@@ -57,6 +57,10 @@ export interface backendInterface {
   getTodayAttendance(token: string, date: string): Promise<any[]>;
   getSalaryReport(token: string, yearMonth: string): Promise<any[]>;
   validateSession(token: string): Promise<boolean>;
+  addBiometricCredential(token: string, employeeId: bigint, credentialId: string): Promise<boolean>;
+  getBiometricCredentials(token: string): Promise<any[]>;
+  lookupByBiometric(token: string, credentialId: string): Promise<[] | [bigint]>;
+  removeBiometricCredential(token: string, employeeId: bigint): Promise<boolean>;
 }
 
 export class Backend implements backendInterface {
@@ -126,6 +130,18 @@ export class Backend implements backendInterface {
   }
   async validateSession(token: string): Promise<boolean> {
     return (this.actor as any).validateSession(token);
+  }
+  async addBiometricCredential(token: string, employeeId: bigint, credentialId: string): Promise<boolean> {
+    return (this.actor as any).addBiometricCredential(token, employeeId, credentialId);
+  }
+  async getBiometricCredentials(token: string): Promise<any[]> {
+    return (this.actor as any).getBiometricCredentials(token);
+  }
+  async lookupByBiometric(token: string, credentialId: string): Promise<[] | [bigint]> {
+    return (this.actor as any).lookupByBiometric(token, credentialId);
+  }
+  async removeBiometricCredential(token: string, employeeId: bigint): Promise<boolean> {
+    return (this.actor as any).removeBiometricCredential(token, employeeId);
   }
 }
 
