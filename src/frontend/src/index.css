@@ -1,0 +1,89 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.875rem;
+    --background: 0.975 0.005 240;
+    --foreground: 0.18 0.015 260;
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.015 260;
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.015 260;
+    --primary: 0.55 0.22 260;
+    --primary-foreground: 1 0 0;
+    --secondary: 0.94 0.01 250;
+    --secondary-foreground: 0.25 0.05 260;
+    --muted: 0.94 0.01 250;
+    --muted-foreground: 0.55 0.02 260;
+    --accent: 0.94 0.01 250;
+    --accent-foreground: 0.25 0.05 260;
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 1 0 0;
+    --border: 0.9 0.01 240;
+    --input: 0.9 0.01 240;
+    --ring: 0.55 0.22 260;
+    --chart-1: 0.55 0.22 260;
+    --chart-2: 0.62 0.2 295;
+    --chart-3: 0.74 0.18 60;
+    --chart-4: 0.65 0.19 165;
+    --chart-5: 0.68 0.22 30;
+    --sidebar: 0.18 0.02 260;
+    --sidebar-foreground: 0.97 0.005 240;
+    --sidebar-primary: 0.75 0.18 255;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.25 0.03 260;
+    --sidebar-accent-foreground: 0.97 0.005 240;
+    --sidebar-border: 0.28 0.03 260;
+    --sidebar-ring: 0.55 0.22 260;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+}
+
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    #16b5ff 0%,
+    #2f63ff 30%,
+    #7c3aed 55%,
+    #f97316 80%,
+    #fbbf24 100%
+  );
+}
+.admin-gradient {
+  background: linear-gradient(135deg, #2f7bff 0%, #7c3aed 100%);
+}
+.gatekeeper-gradient {
+  background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+}
+.employee-gradient {
+  background: linear-gradient(135deg, #22c55e 0%, #06b6d4 100%);
+}
+.admin-gradient-text {
+  background: linear-gradient(135deg, #2f7bff, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gatekeeper-gradient-text {
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.employee-gradient-text {
+  background: linear-gradient(135deg, #22c55e, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

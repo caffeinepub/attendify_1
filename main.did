@@ -1,0 +1,95 @@
+type ShiftType = 
+ variant {
+   both;
+   day;
+   night;
+ };
+type SalaryReport = 
+ record {
+   employeeId: nat;
+   hourlyRate: float64;
+   name: text;
+   totalHours: float64;
+   totalSalary: float64;
+ };
+type RosterEntry = 
+ record {
+   date: text;
+   employeeId: nat;
+   shiftType: ShiftType;
+ };
+type Role = 
+ variant {
+   admin;
+   employee;
+   gatekeeper;
+ };
+type MarkedBy = 
+ variant {
+   admin;
+   gatekeeper;
+   self;
+ };
+type LoginResult = 
+ record {
+   employeeId: nat;
+   name: text;
+   role: Role;
+   token: text;
+ };
+type Employee = 
+ record {
+   hourlyRate: float64;
+   id: nat;
+   isActive: bool;
+   name: text;
+   passwordHash: text;
+   role: Role;
+   shiftType: ShiftType;
+   username: text;
+ };
+type AttendanceStatus = 
+ variant {
+   approved;
+   pending;
+   rejected;
+ };
+type AttendanceRecord = 
+ record {
+   checkIn: opt int;
+   checkOut: opt int;
+   date: text;
+   employeeId: nat;
+   id: nat;
+   markedBy: MarkedBy;
+   netHours: float64;
+   status: AttendanceStatus;
+ };
+service : {
+  addEmployee: (token: text, name: text, username: text, password: text,
+   role: Role, hourlyRate: float64, shiftType: ShiftType) -> (opt nat);
+  approveAttendance: (token: text, recordId: nat, approved: bool) -> (bool);
+  changePassword: (token: text, oldPassword: text, newPassword: text) ->
+   (bool);
+  checkOut: (token: text, recordId: nat, checkOutTime: int) -> (bool);
+  deleteEmployee: (token: text, id: nat) -> (bool);
+  getActiveEmployees: (token: text) -> (vec Employee) query;
+  getAllEmployees: (token: text) -> (vec Employee) query;
+  getAttendanceByMonth: (token: text, yearMonth: text) ->
+   (vec AttendanceRecord) query;
+  getMyAttendance: (token: text, yearMonth: text) ->
+   (vec AttendanceRecord) query;
+  getPendingAttendance: (token: text) -> (vec AttendanceRecord) query;
+  getRosterByMonth: (token: text, yearMonth: text) -> (vec RosterEntry) query;
+  getSalaryReport: (token: text, yearMonth: text) -> (vec SalaryReport) query;
+  getTodayAttendance: (token: text, date: text) ->
+   (vec AttendanceRecord) query;
+  login: (username: text, password: text) -> (opt LoginResult);
+  lookupEmployee: (token: text, employeeId: nat) -> (opt Employee) query;
+  markAttendance: (token: text, employeeId: nat, date: text, checkIn: 
+   int, isSelf: bool) -> (opt nat);
+  setRoster: (token: text, employeeId: nat, date: text, shiftType:
+   ShiftType) -> (bool);
+  updateEmployee: (token: text, id: nat, name: text, hourlyRate: float64,
+   shiftType: ShiftType) -> (bool);
+}
