@@ -56,6 +56,7 @@ export interface backendInterface {
   getAttendanceByMonth(token: string, yearMonth: string): Promise<any[]>;
   getTodayAttendance(token: string, date: string): Promise<any[]>;
   getSalaryReport(token: string, yearMonth: string): Promise<any[]>;
+  validateSession(token: string): Promise<boolean>;
 }
 
 export class Backend implements backendInterface {
@@ -122,6 +123,9 @@ export class Backend implements backendInterface {
   }
   async getSalaryReport(token: string, yearMonth: string): Promise<any[]> {
     return (this.actor as any).getSalaryReport(token, yearMonth);
+  }
+  async validateSession(token: string): Promise<boolean> {
+    return (this.actor as any).validateSession(token);
   }
 }
 

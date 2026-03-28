@@ -11,7 +11,6 @@ actor {
   public type AttendanceStatus = { #pending; #approved; #rejected };
   public type MarkedBy = { #gatekeeper; #admin; #self_ };
 
-  // Internal stable types — unchanged from previous version
   public type Employee = {
     id : Nat;
     name : Text;
@@ -34,7 +33,6 @@ actor {
     netHours : Float;
   };
 
-  // Extended API types returned to frontend
   public type EmployeeInfo = {
     id : Nat;
     customId : Text;
@@ -86,16 +84,63 @@ actor {
     name : Text;
   };
 
-  var nextEmployeeId : Nat = 1;
-  var nextAttendanceId : Nat = 1;
-  var initialized : Bool = false;
+  // ─── Stable storage (survives canister upgrades) ───────────────────────────
+  stable var stableNextEmployeeId : Nat = 1;
+  stable var stableNextAttendanceId : Nat = 1;
+  stable var stableInitialized : Bool = false;
+  stable var stableEmployees : [(Nat, Employee)] = [];
+  stable var stableAttendanceRecords : [(Nat, AttendanceRecord)] = [];
+  stable var stableRosterEntries : [(Text, RosterEntry)] = [];
+  stable var stableSessions : [(Text, Session)] = [];
+  stable var stableEmployeeCustomIds : [(Nat, Text)] = [];
+  stable var stableAttendanceApprovers : [(Nat, Text)] = [];
+
+  // ─── In-memory maps (rebuilt from stable on upgrade) ───────────────────────
+  var nextEmployeeId : Nat = stableNextEmployeeId;
+  var nextAttendanceId : Nat = stableNextAttendanceId;
+  var initialized : Bool = stableInitialized;
   var employees : Map.Map<Nat, Employee> = Map.empty();
   var attendanceRecords : Map.Map<Nat, AttendanceRecord> = Map.empty();
   var rosterEntries : Map.Map<Text, RosterEntry> = Map.empty();
   var sessions : Map.Map<Text, Session> = Map.empty();
-  // New additive stable vars — no compatibility issue
   var employeeCustomIds : Map.Map<Nat, Text> = Map.empty();
   var attendanceApprovers : Map.Map<Nat, Text> = Map.empty();
+
+  // Restore from stable storage on init
+  do {
+    for ((k, v) in stableEmployees.vals()) { employees.add(k, v) };
+    for ((k, v) in stableAttendanceRecords.vals()) { attendanceRecords.add(k, v) };
+    for ((k, v) in stableRosterEntries.vals()) { rosterEntries.add(k, v) };
+    for ((k, v) in stableSessions.vals()) { sessions.add(k, v) };
+    for ((k, v) in stableEmployeeCustomIds.vals()) { employeeCustomIds.add(k, v) };
+    for ((k, v) in stableAttendanceApprovers.vals()) { attendanceApprovers.add(k, v) };
+  };
+
+  // Serialize to stable before upgrade
+  system func preupgrade() {
+    stableEmployees := employees.entries().toArray();
+    stableAttendanceRecords := attendanceRecords.entries().toArray();
+    stableRosterEntries := rosterEntries.entries().toArray();
+    stableSessions := sessions.entries().toArray();
+    stableEmployeeCustomIds := employeeCustomIds.entries().toArray();
+    stableAttendanceApprovers := attendanceApprovers.entries().toArray();
+    stableNextEmployeeId := nextEmployeeId;
+    stableNextAttendanceId := nextAttendanceId;
+    stableInitialized := initialized;
+  };
+
+  // Restore from stable after upgrade (in-memory vars are re-initialized above via do{})
+  system func postupgrade() {
+    nextEmployeeId := stableNextEmployeeId;
+    nextAttendanceId := stableNextAttendanceId;
+    initialized := stableInitialized;
+    for ((k, v) in stableEmployees.vals()) { employees.add(k, v) };
+    for ((k, v) in stableAttendanceRecords.vals()) { attendanceRecords.add(k, v) };
+    for ((k, v) in stableRosterEntries.vals()) { rosterEntries.add(k, v) };
+    for ((k, v) in stableSessions.vals()) { sessions.add(k, v) };
+    for ((k, v) in stableEmployeeCustomIds.vals()) { employeeCustomIds.add(k, v) };
+    for ((k, v) in stableAttendanceApprovers.vals()) { attendanceApprovers.add(k, v) };
+  };
 
   func initAdmin() {
     if (not initialized) {
@@ -142,7 +187,7 @@ actor {
       approvedBy = approver; netHours = rec.netHours };
   };
 
-  // AUTH
+  // ─── AUTH ──────────────────────────────────────────────────────────────────
   public func login(username : Text, password : Text) : async ?LoginResult {
     initAdmin();
     var result : ?LoginResult = null;
@@ -155,6 +200,13 @@ actor {
       };
     };
     result;
+  };
+
+  public func validateSession(token : Text) : async Bool {
+    switch (getSession(token)) {
+      case (?_) { true };
+      case null { false };
+    };
   };
 
   public func changePassword(token : Text, oldPassword : Text, newPassword : Text) : async Bool {
@@ -175,7 +227,7 @@ actor {
     };
   };
 
-  // EMPLOYEES
+  // ─── EMPLOYEES ─────────────────────────────────────────────────────────────
   public func addEmployee(token : Text, customId : Text, name : Text, username : Text, password : Text,
     role : Role, hourlyRate : Float, shiftType : ShiftType) : async ?Nat {
     switch (getSession(token)) {
@@ -260,7 +312,7 @@ actor {
     };
   };
 
-  // ROSTER
+  // ─── ROSTER ────────────────────────────────────────────────────────────────
   public func setRoster(token : Text, employeeId : Nat, date : Text, shiftType : ShiftType) : async Bool {
     switch (getSession(token)) {
       case null { false };
@@ -283,7 +335,7 @@ actor {
     };
   };
 
-  // ATTENDANCE
+  // ─── ATTENDANCE ────────────────────────────────────────────────────────────
   public func markAttendance(token : Text, employeeId : Nat, date : Text, checkIn : Int, isSelf : Bool) : async ?Nat {
     switch (getSession(token)) {
       case null { null };
@@ -407,7 +459,7 @@ actor {
     };
   };
 
-  // REPORTS
+  // ─── REPORTS ───────────────────────────────────────────────────────────────
   public query func getSalaryReport(token : Text, yearMonth : Text) : async [SalaryReport] {
     switch (getSession(token)) {
       case null { [] };

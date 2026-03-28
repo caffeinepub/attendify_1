@@ -71,6 +71,7 @@ export const idlService = IDL.Service({
   getAttendanceByMonth: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(AttendanceRecord)], ['query']),
   getTodayAttendance: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(AttendanceRecord)], ['query']),
   getSalaryReport: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(SalaryReport)], ['query']),
+  validateSession: IDL.Func([IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -139,6 +140,7 @@ export const idlFactory = ({ IDL }) => {
     getAttendanceByMonth: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(AttendanceRecord)], ['query']),
     getTodayAttendance: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(AttendanceRecord)], ['query']),
     getSalaryReport: IDL.Func([IDL.Text, IDL.Text], [IDL.Vec(SalaryReport)], ['query']),
+    validateSession: IDL.Func([IDL.Text], [IDL.Bool], []),
   });
 };
 

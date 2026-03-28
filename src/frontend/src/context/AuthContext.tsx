@@ -1,5 +1,5 @@
 import type React from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export interface AuthState {
   token: string;
@@ -30,6 +30,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return null;
   });
+
+  const authToken = auth?.token ?? null;
+
+  // Validate session on app load — clears stale tokens from previous deploys
+  useEffect(() => {
+    if (!authToken) return;
+    const canisterId =
+      (window as any).__BACKEND_CANISTER_ID__ ||
+      import.meta.env.VITE_BACKEND_CANISTER_ID ||
+      import.meta.env.VITE_CANISTER_ID_BACKEND;
+    if (!canisterId) return;
+
+    import("../backend").then(({ createActor, ExternalBlob }) => {
+      const actor = createActor(
+        canisterId,
+        async (f: any) => new Uint8Array(await f.getBytes()),
+        async (b: any) => ExternalBlob.fromBytes(b),
+      );
+      actor
+        .validateSession(authToken)
+        .then((valid: boolean) => {
+          if (!valid) {
+            // Token is stale (canister was upgraded) — force re-login
+            setAuth(null);
+            localStorage.removeItem("attendify_auth");
+          }
+        })
+        .catch(() => {
+          // Network error — don't log out, let user retry
+        });
+    });
+  }, [authToken]);
 
   const login = (state: AuthState) => {
     setAuth(state);

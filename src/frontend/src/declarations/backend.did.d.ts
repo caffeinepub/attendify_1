@@ -73,6 +73,7 @@ export interface _SERVICE {
   getAttendanceByMonth: ActorMethod<[string, string], AttendanceRecord[]>;
   getTodayAttendance: ActorMethod<[string, string], AttendanceRecord[]>;
   getSalaryReport: ActorMethod<[string, string], SalaryReport[]>;
+  validateSession: ActorMethod<[string], boolean>;
 }
 
 export declare const idlService: IDL.ServiceClass;

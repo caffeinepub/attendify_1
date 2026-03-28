@@ -95,4 +95,5 @@ service : {
    ShiftType) -> (bool);
   updateEmployee: (token: text, id: nat, name: text, hourlyRate: float64,
    shiftType: ShiftType) -> (bool);
+  validateSession: (token: text) -> (bool);
 }
