@@ -28,7 +28,7 @@ type MarkedBy =
  variant {
    admin;
    gatekeeper;
-   self;
+   self_;
  };
 type LoginResult = 
  record {
@@ -37,8 +37,9 @@ type LoginResult =
    role: Role;
    token: text;
  };
-type Employee = 
+type EmployeeInfo = 
  record {
+   customId: text;
    hourlyRate: float64;
    id: nat;
    isActive: bool;
@@ -54,8 +55,9 @@ type AttendanceStatus =
    pending;
    rejected;
  };
-type AttendanceRecord = 
+type AttendanceInfo = 
  record {
+   approvedBy: opt text;
    checkIn: opt int;
    checkOut: opt int;
    date: text;
@@ -66,26 +68,27 @@ type AttendanceRecord =
    status: AttendanceStatus;
  };
 service : {
-  addEmployee: (token: text, name: text, username: text, password: text,
-   role: Role, hourlyRate: float64, shiftType: ShiftType) -> (opt nat);
+  addEmployee: (token: text, customId: text, name: text, username: text,
+   password: text, role: Role, hourlyRate: float64, shiftType: ShiftType) ->
+   (opt nat);
   approveAttendance: (token: text, recordId: nat, approved: bool) -> (bool);
   changePassword: (token: text, oldPassword: text, newPassword: text) ->
    (bool);
   checkOut: (token: text, recordId: nat, checkOutTime: int) -> (bool);
   deleteEmployee: (token: text, id: nat) -> (bool);
-  getActiveEmployees: (token: text) -> (vec Employee) query;
-  getAllEmployees: (token: text) -> (vec Employee) query;
+  getActiveEmployees: (token: text) -> (vec EmployeeInfo) query;
+  getAllEmployees: (token: text) -> (vec EmployeeInfo) query;
   getAttendanceByMonth: (token: text, yearMonth: text) ->
-   (vec AttendanceRecord) query;
+   (vec AttendanceInfo) query;
   getMyAttendance: (token: text, yearMonth: text) ->
-   (vec AttendanceRecord) query;
-  getPendingAttendance: (token: text) -> (vec AttendanceRecord) query;
+   (vec AttendanceInfo) query;
+  getPendingAttendance: (token: text) -> (vec AttendanceInfo) query;
   getRosterByMonth: (token: text, yearMonth: text) -> (vec RosterEntry) query;
   getSalaryReport: (token: text, yearMonth: text) -> (vec SalaryReport) query;
   getTodayAttendance: (token: text, date: text) ->
-   (vec AttendanceRecord) query;
+   (vec AttendanceInfo) query;
   login: (username: text, password: text) -> (opt LoginResult);
-  lookupEmployee: (token: text, employeeId: nat) -> (opt Employee) query;
+  lookupEmployee: (token: text, employeeId: nat) -> (opt EmployeeInfo) query;
   markAttendance: (token: text, employeeId: nat, date: text, checkIn: 
    int, isSelf: bool) -> (opt nat);
   setRoster: (token: text, employeeId: nat, date: text, shiftType:

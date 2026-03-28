@@ -9,6 +9,7 @@ const MarkedBy = IDL.Variant({ gatekeeper: IDL.Null, admin: IDL.Null, self_: IDL
 
 const Employee = IDL.Record({
   id: IDL.Nat,
+  customId: IDL.Text,
   name: IDL.Text,
   username: IDL.Text,
   passwordHash: IDL.Text,
@@ -26,6 +27,7 @@ const AttendanceRecord = IDL.Record({
   checkOut: IDL.Opt(IDL.Int),
   status: AttendanceStatus,
   markedBy: MarkedBy,
+  approvedBy: IDL.Opt(IDL.Text),
   netHours: IDL.Float64,
 });
 
@@ -53,7 +55,7 @@ const SalaryReport = IDL.Record({
 export const idlService = IDL.Service({
   login: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(LoginResult)], []),
   changePassword: IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
-  addEmployee: IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, Role, IDL.Float64, ShiftType], [IDL.Opt(IDL.Nat)], []),
+  addEmployee: IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, Role, IDL.Float64, ShiftType], [IDL.Opt(IDL.Nat)], []),
   updateEmployee: IDL.Func([IDL.Text, IDL.Nat, IDL.Text, IDL.Float64, ShiftType], [IDL.Bool], []),
   deleteEmployee: IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
   getActiveEmployees: IDL.Func([IDL.Text], [IDL.Vec(Employee)], ['query']),
@@ -80,6 +82,7 @@ export const idlFactory = ({ IDL }) => {
   const MarkedBy = IDL.Variant({ gatekeeper: IDL.Null, admin: IDL.Null, self_: IDL.Null });
   const Employee = IDL.Record({
     id: IDL.Nat,
+    customId: IDL.Text,
     name: IDL.Text,
     username: IDL.Text,
     passwordHash: IDL.Text,
@@ -96,6 +99,7 @@ export const idlFactory = ({ IDL }) => {
     checkOut: IDL.Opt(IDL.Int),
     status: AttendanceStatus,
     markedBy: MarkedBy,
+    approvedBy: IDL.Opt(IDL.Text),
     netHours: IDL.Float64,
   });
   const RosterEntry = IDL.Record({
@@ -119,7 +123,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     login: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(LoginResult)], []),
     changePassword: IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
-    addEmployee: IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, Role, IDL.Float64, ShiftType], [IDL.Opt(IDL.Nat)], []),
+    addEmployee: IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, Role, IDL.Float64, ShiftType], [IDL.Opt(IDL.Nat)], []),
     updateEmployee: IDL.Func([IDL.Text, IDL.Nat, IDL.Text, IDL.Float64, ShiftType], [IDL.Bool], []),
     deleteEmployee: IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
     getActiveEmployees: IDL.Func([IDL.Text], [IDL.Vec(Employee)], ['query']),

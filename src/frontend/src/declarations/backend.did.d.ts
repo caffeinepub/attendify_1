@@ -11,6 +11,7 @@ export type MarkedBy = { 'gatekeeper': null } | { 'admin': null } | { 'self_': n
 
 export interface Employee {
   id: bigint;
+  customId: string;
   name: string;
   username: string;
   passwordHash: string;
@@ -28,6 +29,7 @@ export interface AttendanceRecord {
   checkOut: [] | [bigint];
   status: AttendanceStatus;
   markedBy: MarkedBy;
+  approvedBy: [] | [string];
   netHours: number;
 }
 
@@ -55,7 +57,7 @@ export interface SalaryReport {
 export interface _SERVICE {
   login: ActorMethod<[string, string], [] | [LoginResult]>;
   changePassword: ActorMethod<[string, string, string], boolean>;
-  addEmployee: ActorMethod<[string, string, string, string, Role, number, ShiftType], [] | [bigint]>;
+  addEmployee: ActorMethod<[string, string, string, string, string, Role, number, ShiftType], [] | [bigint]>;
   updateEmployee: ActorMethod<[string, bigint, string, number, ShiftType], boolean>;
   deleteEmployee: ActorMethod<[string, bigint], boolean>;
   getActiveEmployees: ActorMethod<[string], Employee[]>;

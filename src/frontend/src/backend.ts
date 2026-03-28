@@ -40,7 +40,7 @@ export interface backendInterface {
   _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
   login(username: string, password: string): Promise<[] | [any]>;
   changePassword(token: string, oldPassword: string, newPassword: string): Promise<boolean>;
-  addEmployee(token: string, name: string, username: string, password: string, role: any, hourlyRate: number, shiftType: any): Promise<[] | [bigint]>;
+  addEmployee(token: string, customId: string, name: string, username: string, password: string, role: any, hourlyRate: number, shiftType: any): Promise<[] | [bigint]>;
   updateEmployee(token: string, id: bigint, name: string, hourlyRate: number, shiftType: any): Promise<boolean>;
   deleteEmployee(token: string, id: bigint): Promise<boolean>;
   getActiveEmployees(token: string): Promise<any[]>;
@@ -75,8 +75,8 @@ export class Backend implements backendInterface {
   async changePassword(token: string, oldPassword: string, newPassword: string): Promise<boolean> {
     return (this.actor as any).changePassword(token, oldPassword, newPassword);
   }
-  async addEmployee(token: string, name: string, username: string, password: string, role: any, hourlyRate: number, shiftType: any): Promise<[] | [bigint]> {
-    return (this.actor as any).addEmployee(token, name, username, password, role, hourlyRate, shiftType);
+  async addEmployee(token: string, customId: string, name: string, username: string, password: string, role: any, hourlyRate: number, shiftType: any): Promise<[] | [bigint]> {
+    return (this.actor as any).addEmployee(token, customId, name, username, password, role, hourlyRate, shiftType);
   }
   async updateEmployee(token: string, id: bigint, name: string, hourlyRate: number, shiftType: any): Promise<boolean> {
     return (this.actor as any).updateEmployee(token, id, name, hourlyRate, shiftType);
