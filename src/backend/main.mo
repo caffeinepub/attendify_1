@@ -90,16 +90,16 @@ actor {
   };
 
   // ─── Stable storage (survives canister upgrades) ───────────────────────────────────────
-  var stableNextEmployeeId : Nat = 1;
-  var stableNextAttendanceId : Nat = 1;
-  var stableInitialized : Bool = false;
-  var stableEmployees : [(Nat, Employee)] = [];
-  var stableAttendanceRecords : [(Nat, AttendanceRecord)] = [];
-  var stableRosterEntries : [(Text, RosterEntry)] = [];
-  var stableSessions : [(Text, Session)] = [];
-  var stableEmployeeCustomIds : [(Nat, Text)] = [];
-  var stableAttendanceApprovers : [(Nat, Text)] = [];
-  var stableBiometricCredentials : [(Text, Nat)] = []; // credentialId -> employeeId
+  stable var stableNextEmployeeId : Nat = 1;
+  stable var stableNextAttendanceId : Nat = 1;
+  stable var stableInitialized : Bool = false;
+  stable var stableEmployees : [(Nat, Employee)] = [];
+  stable var stableAttendanceRecords : [(Nat, AttendanceRecord)] = [];
+  stable var stableRosterEntries : [(Text, RosterEntry)] = [];
+  stable var stableSessions : [(Text, Session)] = [];
+  stable var stableEmployeeCustomIds : [(Nat, Text)] = [];
+  stable var stableAttendanceApprovers : [(Nat, Text)] = [];
+  stable var stableBiometricCredentials : [(Text, Nat)] = []; // credentialId -> employeeId
 
   // ─── In-memory maps ─────────────────────────────────────────────────────────
   var nextEmployeeId : Nat = stableNextEmployeeId;
