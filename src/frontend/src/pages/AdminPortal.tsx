@@ -162,12 +162,19 @@ export default function AdminPortal() {
 
   const loadDashboard = async () => {
     if (!actor || !auth) return;
-    const [emps, pending] = await Promise.all([
-      actor.getAllEmployees(auth.token),
-      actor.getPendingAttendance(auth.token),
-    ]);
-    setEmployees(emps);
-    setPendingList(pending);
+    // Load employees and pending separately so one failure doesn't block the other
+    try {
+      const emps = await actor.getAllEmployees(auth.token);
+      setEmployees(emps);
+    } catch (err) {
+      console.error("Failed to load employees:", err);
+    }
+    try {
+      const pending = await actor.getPendingAttendance(auth.token);
+      setPendingList(pending);
+    } catch (err) {
+      console.error("Failed to load pending attendance:", err);
+    }
   };
 
   const loadAttendance = async () => {
@@ -198,13 +205,9 @@ export default function AdminPortal() {
   const reload = async () => {
     if (!actor || !auth) return;
     setLoadingData(true);
-    try {
-      await Promise.all([loadDashboard(), loadAttendance()]);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingData(false);
-    }
+    // Run independently so one failure doesn't block the other
+    await Promise.allSettled([loadDashboard(), loadAttendance()]);
+    setLoadingData(false);
   };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reload on actor

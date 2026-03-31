@@ -126,13 +126,18 @@ export default function GatekeeperPortal() {
   const reload = async () => {
     if (!actor || !auth) return;
     setLoadingData(true);
+    // Load employees independently so attendance errors don't block the list
     try {
-      const [emps, todayAtt, pending] = await Promise.all([
-        actor.getActiveEmployees(auth.token),
+      const emps = await actor.getActiveEmployees(auth.token);
+      setEmployees(emps);
+    } catch (err) {
+      console.error("Error loading employees:", err);
+    }
+    try {
+      const [todayAtt, pending] = await Promise.all([
         actor.getTodayAttendance(auth.token, today),
         actor.getPendingAttendance(auth.token),
       ]);
-      setEmployees(emps);
       setTodayAttendance(todayAtt);
       setPendingApprovals(pending);
     } catch (err) {
