@@ -208,12 +208,14 @@ actor {
   public func login(username : Text, password : Text) : async ?LoginResult {
     ensureDefaultAccounts();
     var result : ?LoginResult = null;
-    for (emp in employees.values()) {
+    label searchLoop for (emp in employees.values()) {
       if (emp.username == username and emp.passwordHash == password and emp.isActive) {
-        let token = username # "_" # Time.now().toText();
+        // Include emp.id to guarantee token uniqueness (Time.now() is same within one message)
+        let token = username # "_" # emp.id.toText() # "_" # Time.now().toText();
         sessions.add(token, { employeeId = emp.id; role = emp.role;
           expiresAt = Time.now() + 86_400_000_000_000 });
         result := ?{ token; role = emp.role; employeeId = emp.id; name = emp.name };
+        break searchLoop; // Stop after first match — prevents duplicate-token trap
       };
     };
     result;
