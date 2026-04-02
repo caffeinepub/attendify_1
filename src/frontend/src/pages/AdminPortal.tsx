@@ -30,6 +30,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  Download,
   Eye,
   EyeOff,
   KeyRound,
@@ -203,6 +204,42 @@ export default function AdminPortal() {
     if (!actor || !auth) return;
     const roster = await actor.getRosterByMonth(auth.token, reportMonth);
     setRosterEntries(roster);
+  };
+
+  const downloadXLS = () => {
+    if (salaryData.length === 0) {
+      toast.error("No data to download");
+      return;
+    }
+    const headers = [
+      "Employee Name",
+      "Employee ID",
+      "Total Hours",
+      "Rate/hr (Rs)",
+      "Total Salary (Rs)",
+    ];
+    const rows = salaryData.map((row: any) => [
+      row.name,
+      row.employeeId.toString(),
+      row.totalHours.toFixed(1),
+      row.hourlyRate,
+      row.totalSalary.toFixed(0),
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((r) =>
+        r.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+      )
+      .join("\n");
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "application/vnd.ms-excel;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `salary_report_${reportMonth}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const reload = async () => {
@@ -1071,7 +1108,7 @@ export default function AdminPortal() {
           {/* Reports */}
           {tab === "reports" && (
             <div className="space-y-4" data-ocid="reports.section">
-              <div className="flex gap-3 items-end">
+              <div className="flex gap-3 items-end flex-wrap">
                 <div>
                   <Label>Month</Label>
                   <Input
@@ -1082,10 +1119,24 @@ export default function AdminPortal() {
                     data-ocid="reports.input"
                   />
                 </div>
+                <Button
+                  onClick={downloadXLS}
+                  disabled={salaryData.length === 0}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  data-ocid="reports.download_button"
+                >
+                  <Download className="w-4 h-4" />
+                  Download XLS
+                </Button>
               </div>
               <Card className="border-0 shadow-card">
                 <CardHeader>
-                  <CardTitle>Salary Report — {reportMonth}</CardTitle>
+                  <CardTitle>
+                    Salary Report — {reportMonth}{" "}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      (Active Employees Only)
+                    </span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   {salaryData.length === 0 ? (

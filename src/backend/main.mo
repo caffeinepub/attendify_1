@@ -560,7 +560,7 @@ actor {
           r.status == #approved and r.date.startsWith(#text yearMonth)
         }).toArray();
         employees.values().toArray().filterMap(func(emp : Employee) : ?SalaryReport {
-          if (emp.role != #employee) { return null };
+          if (emp.role != #employee or not emp.isActive) { return null };
           var totalHours : Float = 0.0;
           for (rec in monthRecs.vals()) {
             if (rec.employeeId == emp.id) { totalHours += rec.netHours };
