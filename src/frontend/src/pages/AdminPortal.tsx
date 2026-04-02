@@ -107,6 +107,9 @@ export default function AdminPortal() {
   const { actor, isFetching } = useActor();
 
   const [tab, setTab] = useState("dashboard");
+  const [empFilter, setEmpFilter] = useState<"all" | "active" | "inactive">(
+    "all",
+  );
   const [employees, setEmployees] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<any[]>([]);
   const [pendingList, setPendingList] = useState<any[]>([]);
@@ -341,6 +344,22 @@ export default function AdminPortal() {
     } catch (err) {
       console.error(err);
       toast.error("Error deactivating employee");
+    }
+  };
+
+  const handleReactivate = async (emp: any) => {
+    if (!actor || !auth) return;
+    try {
+      const ok = await (actor as any).reactivateEmployee(auth.token, emp.id);
+      if (ok) {
+        toast.success(`${emp.name} reactivated`);
+        await loadDashboard();
+      } else {
+        toast.error("Failed to reactivate");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error reactivating employee");
     }
   };
 
@@ -719,101 +738,158 @@ export default function AdminPortal() {
                   <Plus className="w-4 h-4 mr-2" /> Add Employee
                 </Button>
               </div>
+              {/* Filter Tabs */}
+              <div className="flex gap-2" data-ocid="employees.tab">
+                {(["all", "active", "inactive"] as const).map((f) => {
+                  const count =
+                    f === "all"
+                      ? employees.length
+                      : f === "active"
+                        ? employees.filter((e: any) => e.isActive).length
+                        : employees.filter((e: any) => !e.isActive).length;
+                  return (
+                    <button
+                      type="button"
+                      key={f}
+                      onClick={() => setEmpFilter(f)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                        empFilter === f
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+                      }`}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}{" "}
+                      <span
+                        className={`ml-1 text-xs font-semibold ${empFilter === f ? "text-blue-100" : "text-gray-400"}`}
+                      >
+                        ({count})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
               <Card className="border-0 shadow-card">
                 <CardContent className="p-0">
-                  {employees.length === 0 ? (
-                    <div
-                      className="text-center py-10 text-muted-foreground"
-                      data-ocid="employees.empty_state"
-                    >
-                      No employees found
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Username</TableHead>
-                          <TableHead>Shift</TableHead>
-                          <TableHead>Rate/hr</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {employees.map((emp: any, i: number) => (
-                          <TableRow
-                            key={emp.id.toString()}
-                            data-ocid={`employees.item.${i + 1}`}
-                          >
-                            <TableCell className="font-mono text-xs">
-                              {emp.customId || emp.id.toString()}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {emp.name}
-                            </TableCell>
-                            <TableCell>{emp.username}</TableCell>
-                            <TableCell>
-                              {shiftBadge(shiftToStr(emp.shiftType))}
-                            </TableCell>
-                            <TableCell>₹{emp.hourlyRate}/hr</TableCell>
-                            <TableCell>
-                              {emp.isActive ? (
-                                <Badge className="bg-green-100 text-green-700 border-green-200">
-                                  Active
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="text-red-500 border-red-300"
-                                >
-                                  Deactivated
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2 flex-wrap">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-purple-600 border-purple-300"
-                                  onClick={() => setShowCredsEmp({ ...emp })}
-                                  data-ocid={`employees.secondary_button.${i + 1}`}
-                                >
-                                  <Eye className="w-3 h-3 mr-1" /> Credentials
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditEmp({
-                                      ...emp,
-                                      shiftTypeStr: shiftToStr(emp.shiftType),
-                                    })
-                                  }
-                                  data-ocid={`employees.edit_button.${i + 1}`}
-                                >
-                                  Edit
-                                </Button>
-                                {emp.isActive && (
+                  {(() => {
+                    const filteredEmployees = employees.filter((emp: any) => {
+                      const isRegularEmployee =
+                        !(emp.role && "admin" in emp.role) &&
+                        !(emp.role && "gatekeeper" in emp.role);
+                      if (!isRegularEmployee) return empFilter === "all";
+                      if (empFilter === "active") return emp.isActive;
+                      if (empFilter === "inactive") return !emp.isActive;
+                      return true;
+                    });
+                    return filteredEmployees.length === 0 ? (
+                      <div
+                        className="text-center py-10 text-muted-foreground"
+                        data-ocid="employees.empty_state"
+                      >
+                        {empFilter === "inactive"
+                          ? "No inactive employees"
+                          : "No employees found"}
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Username</TableHead>
+                            <TableHead>Shift</TableHead>
+                            <TableHead>Rate/hr</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredEmployees.map((emp: any, i: number) => (
+                            <TableRow
+                              key={emp.id.toString()}
+                              className={
+                                !emp.isActive ? "opacity-60 bg-gray-50" : ""
+                              }
+                              data-ocid={`employees.item.${i + 1}`}
+                            >
+                              <TableCell className="font-mono text-xs">
+                                {emp.customId || emp.id.toString()}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {emp.name}
+                              </TableCell>
+                              <TableCell>{emp.username}</TableCell>
+                              <TableCell>
+                                {shiftBadge(shiftToStr(emp.shiftType))}
+                              </TableCell>
+                              <TableCell>₹{emp.hourlyRate}/hr</TableCell>
+                              <TableCell>
+                                {emp.isActive ? (
+                                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                                    Active
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-red-500 border-red-300"
+                                  >
+                                    Deactivated
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2 flex-wrap">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="text-red-500 border-red-300"
-                                    onClick={() => handleDeactivate(emp)}
-                                    data-ocid={`employees.delete_button.${i + 1}`}
+                                    className="text-purple-600 border-purple-300"
+                                    onClick={() => setShowCredsEmp({ ...emp })}
+                                    data-ocid={`employees.secondary_button.${i + 1}`}
                                   >
-                                    Deactivate
+                                    <Eye className="w-3 h-3 mr-1" /> Credentials
                                   </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setEditEmp({
+                                        ...emp,
+                                        shiftTypeStr: shiftToStr(emp.shiftType),
+                                      })
+                                    }
+                                    data-ocid={`employees.edit_button.${i + 1}`}
+                                  >
+                                    Edit
+                                  </Button>
+                                  {emp.isActive && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-red-500 border-red-300"
+                                      onClick={() => handleDeactivate(emp)}
+                                      data-ocid={`employees.delete_button.${i + 1}`}
+                                    >
+                                      Deactivate
+                                    </Button>
+                                  )}
+                                  {!emp.isActive && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-green-600 border-green-400"
+                                      onClick={() => handleReactivate(emp)}
+                                      data-ocid={`employees.reactivate_button.${i + 1}`}
+                                    >
+                                      Reactivate
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>

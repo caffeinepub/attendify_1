@@ -43,6 +43,7 @@ export interface backendInterface {
   addEmployee(token: string, customId: string, name: string, username: string, password: string, role: any, hourlyRate: number, shiftType: any): Promise<[] | [bigint]>;
   updateEmployee(token: string, id: bigint, name: string, hourlyRate: number, shiftType: any): Promise<boolean>;
   deleteEmployee(token: string, id: bigint): Promise<boolean>;
+  reactivateEmployee(token: string, id: bigint): Promise<boolean>;
   getActiveEmployees(token: string): Promise<any[]>;
   getAllEmployees(token: string): Promise<any[]>;
   lookupEmployee(token: string, employeeId: bigint): Promise<[] | [any]>;
@@ -88,6 +89,9 @@ export class Backend implements backendInterface {
   }
   async deleteEmployee(token: string, id: bigint): Promise<boolean> {
     return (this.actor as any).deleteEmployee(token, id);
+  }
+  async reactivateEmployee(token: string, id: bigint): Promise<boolean> {
+    return (this.actor as any).reactivateEmployee(token, id);
   }
   async getActiveEmployees(token: string): Promise<any[]> {
     return (this.actor as any).getActiveEmployees(token);

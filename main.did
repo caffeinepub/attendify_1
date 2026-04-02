@@ -81,6 +81,7 @@ service : {
    (bool);
   checkOut: (token: text, recordId: nat, checkOutTime: int) -> (bool);
   deleteEmployee: (token: text, id: nat) -> (bool);
+  reactivateEmployee: (token: text, id: nat) -> (bool);
   getActiveEmployees: (token: text) -> (vec EmployeeInfo) query;
   getAllEmployees: (token: text) -> (vec EmployeeInfo) query;
   getAttendanceByMonth: (token: text, yearMonth: text) ->

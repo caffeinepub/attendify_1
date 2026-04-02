@@ -81,6 +81,7 @@ export interface backendInterface {
     addEmployee(token: string, customId: string, name: string, username: string, password: string, role: Role, hourlyRate: number, shiftType: ShiftType): Promise<[] | [bigint]>;
     updateEmployee(token: string, id: bigint, name: string, hourlyRate: number, shiftType: ShiftType): Promise<boolean>;
     deleteEmployee(token: string, id: bigint): Promise<boolean>;
+    reactivateEmployee(token: string, id: bigint): Promise<boolean>;
     getActiveEmployees(token: string): Promise<EmployeeInfo[]>;
     getAllEmployees(token: string): Promise<EmployeeInfo[]>;
     lookupEmployee(token: string, employeeId: bigint): Promise<[] | [EmployeeInfo]>;

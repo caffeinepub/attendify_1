@@ -297,6 +297,24 @@ actor {
     };
   };
 
+  public func reactivateEmployee(token : Text, id : Nat) : async Bool {
+    switch (getSession(token)) {
+      case null { false };
+      case (?sess) {
+        if (sess.role != #admin) { return false };
+        switch (employees.get(id)) {
+          case null { false };
+          case (?emp) {
+            employees.add(id, { id = emp.id; name = emp.name; username = emp.username;
+              passwordHash = emp.passwordHash; role = emp.role; hourlyRate = emp.hourlyRate;
+              shiftType = emp.shiftType; isActive = true });
+            true;
+          };
+        };
+      };
+    };
+  };
+
   public query func getActiveEmployees(token : Text) : async [EmployeeInfo] {
     switch (getSession(token)) {
       case null { [] };
